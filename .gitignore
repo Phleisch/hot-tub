@@ -1,0 +1,3 @@
+/data/*.nc
+/data/*.csv
+/src/historic_model/.vscode
