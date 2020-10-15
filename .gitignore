@@ -1,3 +1,9 @@
 /data/*.nc
 /data/*.csv
 /src/historic_model/.vscode
+/src/stream_processing/checkpoints
+/src/stream_processing/project
+/src/stream_processing/target
+/src/stream_processing/stream_emulator/project
+/src/stream_processing/stream_emulator/target
+
