@@ -52,24 +52,37 @@ class BatchProcessor:
                 self.batch_processing()
 
     def batch_processing(self):
-        """!@brief Processes the table data from Cassandra and saves it back to Cassandra.
+        """!@brief Processes the table data from Cassandra, creates a model from it and saves it to /data.
 
-        Sequentially accesses all cities in the 'hot_tub.current' table, averages their temperature and saves the
-        reduced data into """
+        Reduces the city temperatures from the last 24 hours and averages them. Uses this average data to interpolate
+        global data."""
         cities = self._load_rdd()
         avg_by_city = cities.mapValues(lambda v: (v, 1)).reduceByKey(lambda a, b: (a[0]+b[0], a[1]+b[1])) \
                                                         .mapValues(lambda v: v[0]/v[1]).collectAsMap()
         self.create_model(avg_by_city)
 
     def _load_rdd(self):
+        """!@brief Returns the Cassandra table as an RDD.
+
+        Table is processed to contain only the relevant tuple (city, temperature).
+
+        @return The Cassandra table as SparkRDD.
+        """
         rdd = self.sql_context.read.format("org.apache.spark.sql.cassandra").options(table=self.table_name,
                                                                                      keyspace=self.key_space_name) \
                                    .load().rdd.map(list).map(lambda x: (x[0], x[2]))
         return rdd
 
     def _load_city_location_cache(self):
+        """!@brief Returns the city cache to reduce requests to OpenStreetMap.
+
+        The cache is a dictionary containing all previously requested city names as keys and [longitude, latitude] as
+        values.
+
+        @return The city location dictionary.
+        """
         try:
-            with open(self.ROOT_PATH.joinpath('src', 'batch_processing', 'city_cache.json'), 'r') as f:
+            with open(self.ROOT_PATH.joinpath('data', 'city_cache.json'), 'r') as f:
                 city_cache = json.load(f)
             return city_cache
         except FileNotFoundError:
@@ -77,15 +90,24 @@ class BatchProcessor:
             return dict()
 
     def _save_city_location_cache(self):
+        """!@brief Saves the city cache to /data/city_cache.json.
+
+        The cache is a dictionary containing all previously requested city names as keys and [longitude, latitude] as
+        values.
+        """
         try:
-            with open(self.ROOT_PATH.joinpath('src', 'batch_processing', 'city_cache.json'), 'w') as f:
-                city_cache = json.dump(self.city_location_cache, f)
+            with open(self.ROOT_PATH.joinpath('data', 'city_cache.json'), 'w') as f:
+                json.dump(self.city_location_cache, f)
             self.cache_dirty = False
-            return city_cache
         except FileNotFoundError:
             print("Error writing the cache. Cache not existent.")
 
     def create_model(self, data):
+        """!@brief Prepares the locations/values and triggers interpolation and saving of the model.
+
+        Reads all cities and creates coordinate/value arrays from the cache or the geolocator. Interpolation and saving
+        is delegated to @ref _interpolate_model.
+        """
         points = list()
         values = list()
         for city, temperature in data.items():
@@ -107,6 +129,11 @@ class BatchProcessor:
         self._interpolate_model(points, values)
 
     def _interpolate_model(self, points, values):
+        """!@brief Interpolates and saves the model.
+
+        Creates a nearest neighbor interpolation with gaussian blur, applies the land mask to the model and saves it to
+        /data/current_model.npy.
+        """
         points.append([0, 0])
         values.append(2)
         x_grid, y_grid = np.mgrid[0:900, 0:1800]
