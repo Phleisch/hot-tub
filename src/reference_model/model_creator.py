@@ -12,7 +12,7 @@ from pathlib import Path
 import xarray
 
 
-ROOT_PATH = Path().resolve().parent.parent  # Repository root path.
+ROOT_PATH = Path(__file__).resolve().parents[2]  # Repository root path.
 
 
 def load_dataset():

@@ -17,7 +17,7 @@ class ReferenceModelLoader:
 
     Main functionality lies in the @ref load_model function. Plotting of models is only supported for debugging.
     """
-    ROOT_PATH = Path().resolve().parent  # Repository root path.
+    ROOT_PATH = Path(__file__).resolve().parents[2]  # Repository root path.
 
     def __init__(self):
         """!@brief Class constructor loads the historical_average.csv file and the land mask matrix into memory for fast

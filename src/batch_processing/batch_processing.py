@@ -24,12 +24,12 @@ class BatchProcessor:
 
         Exports necessary environment variables and initializes the SparkContext and SparkSQLContext.
         """
-        self.ROOT_PATH = Path().resolve().parent
+        self.ROOT_PATH = Path(__file__).resolve().parents[2]
         self.msg_count = 0
         self.num_api_workers = 3
         self.key_space_name = 'hot_tub'
         self.table_name = 'current'
-        self.processing_sigma = 30  # Value for gaussian filtering during model postprocessing. Modify if necessary.
+        self.processing_sigma = 3  # Value for gaussian filtering during model postprocessing. Modify if necessary.
         self.geolocator = Nominatim(user_agent="hot_tub")
         self.city_location_cache = self._load_city_location_cache()
         self.land_mask = np.load(self.ROOT_PATH.joinpath('data', 'mask_model.npy'))
@@ -50,6 +50,7 @@ class BatchProcessor:
             self.msg_count = (self.msg_count + 1) % self.num_api_workers
             if self.msg_count == 0:
                 self.batch_processing()
+                print("Batch processing done.")
 
     def batch_processing(self):
         """!@brief Processes the table data from Cassandra, creates a model from it and saves it to /data.

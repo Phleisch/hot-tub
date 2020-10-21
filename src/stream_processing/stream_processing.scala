@@ -48,7 +48,8 @@ object StreamProcessing {
         /** Returns a tuple of (city, time, newTemp).
          *
          * Stateful stream mapping. Splits the key into the city name, the record time and combines the values to a 
-         * single return tuple. Uses the old value if the optional value is not present.
+         * single return tuple. Uses the old value if the optional value is not present. Incoming keys are of form 
+         * (<Cityname>:<Time>, <Temperature>)
          *
          * @return A tuple of (city, time, newTemp).
          */
