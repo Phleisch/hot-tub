@@ -1,1 +1,15 @@
 __pycache__
+/data/*.nc
+/data/*.csv
+/src/historic_model/.vscode
+/src/stream_processing/checkpoints
+/src/stream_processing/project
+/src/stream_processing/target
+/src/stream_processing/stream_emulator/project
+/src/stream_processing/stream_emulator/target
+/src/batch_processing/api_emulator/project
+/src/batch_processing/api_emulator/target
+/src/.vscode
+/src/model_service/__pycache__
+/src/reference_model/__pycache__
+/data/current_model.npy
