@@ -3,7 +3,6 @@ package generator
 import java.util.{Date, Properties}
 import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, ProducerConfig}
 import scala.util.Random
-import kafka.producer.KeyedMessage
 
 /** An emulator of the API stream input for testing purposes.
  *
@@ -14,7 +13,7 @@ object StreamEmulator extends App {
 
     /** Returns a random value between -20 and 20 as string. */
     def getRandomVal: String = {
-        ((Random.nextFloat() - 0.5) * 40).toString()
+        ((Random.nextFloat() - 0.5) + 40).toString()
     }
 
     /** Returns a single string with a city:time combination.
@@ -30,7 +29,8 @@ object StreamEmulator extends App {
 
     // Kafka configuration.
     val topic = "currentTemp"
-    val brokers = "localhost:9092"
+    val brokers = "localhost:19092"  // Use the advertised listener port 19092 for Docker Kafka container.
+    print(brokers)
     val rnd = new Random()
 
     val props = new Properties()

@@ -16,14 +16,24 @@ services:
       - "hot_tub:127.0.0.1"
   kafka:
     image: confluentinc/cp-kafka:latest
+    container_name: kafka
     network_mode: host
     depends_on:
-      - zookeeper
+      - "zookeeper"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: localhost:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:19092
     ports:
-      - "19092:19092"
+      - "9092:9092"
+    extra_hosts:
+      - "hot_tub:127.0.0.1"
+  cassandra:
+    image: cassandra:latest
+    network_mode: host
+    ports:
+      - "9092:9092"
+    volumes: 
+      - ./data:/var/lib/cassandra
     extra_hosts:
       - "hot_tub:127.0.0.1"

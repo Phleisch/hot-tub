@@ -13,3 +13,5 @@ __pycache__
 /src/model_service/__pycache__
 /src/reference_model/__pycache__
 /data/current_model.npy
+/data/commitlog
+/data/data

@@ -4,10 +4,15 @@ from pathlib import Path
 from scipy.interpolate import griddata
 from scipy.ndimage.filters import gaussian_filter
 import json
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from datetime import datetime
 from geopy.geocoders import Nominatim
 from kafka import KafkaConsumer
 from pyspark import SparkContext
 from pyspark.sql import SQLContext
+from reference_model.reference_model_loader import ReferenceModelLoader
 
 
 class BatchProcessor:
@@ -33,6 +38,7 @@ class BatchProcessor:
         self.geolocator = Nominatim(user_agent="hot_tub")
         self.city_location_cache = self._load_city_location_cache()
         self.land_mask = np.load(self.ROOT_PATH.joinpath('data', 'mask_model.npy'))
+        self.reference_model_loader = ReferenceModelLoader()
         self.cache_dirty = False
         os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.datastax.spark:spark-cassandra-connector_2.11:2.3.0 \
                                              --conf spark.cassandra.connection.host=127.0.0.1 pyspark-shell'
@@ -50,17 +56,24 @@ class BatchProcessor:
             self.msg_count = (self.msg_count + 1) % self.num_api_workers
             if self.msg_count == 0:
                 self.batch_processing()
-                print("Batch processing done.")
 
     def batch_processing(self):
-        """!@brief Processes the table data from Cassandra, creates a model from it and saves it to /data.
+        """!@brief Processes the table data from Cassandra, creates a model from it and saves it.
 
         Reduces the city temperatures from the last 24 hours and averages them. Uses this average data to interpolate
-        global data."""
+        global data. Creates a temperature difference map by substracting the reference model from the current day and
+        saves it to /data/global_temp_diff_map.png for use in the webserver."""
         cities = self._load_rdd()
         avg_by_city = cities.mapValues(lambda v: (v, 1)).reduceByKey(lambda a, b: (a[0]+b[0], a[1]+b[1])) \
                                                         .mapValues(lambda v: v[0]/v[1]).collectAsMap()
-        self.create_model(avg_by_city)
+        curr_model = self.create_model(avg_by_city)
+        day = datetime.now().timetuple().tm_yday - 1  # Starting at index 0.
+        reference_model = self.reference_model_loader.load_model(day)
+        model = curr_model - reference_model
+        fig, ax = plt.subplots(figsize=(20, 10))
+        plot = sns.heatmap(model, ax=ax, vmin=-50, vmax=50, xticklabels=False, yticklabels=False)
+        plot.get_figure().savefig(self.ROOT_PATH.joinpath('src', 'webserver', 'static', 'global_temp_diff_map.png'))
+        plt.close(fig)
 
     def _load_rdd(self):
         """!@brief Returns the Cassandra table as an RDD.
@@ -106,8 +119,8 @@ class BatchProcessor:
     def create_model(self, data):
         """!@brief Prepares the locations/values and triggers interpolation and saving of the model.
 
-        Reads all cities and creates coordinate/value arrays from the cache or the geolocator. Interpolation and saving
-        is delegated to @ref _interpolate_model.
+        Reads all cities and creates coordinate/value arrays from the cache or the geolocator.
+        @return Returns the current interpolated model.
         """
         points = list()
         values = list()
@@ -127,13 +140,13 @@ class BatchProcessor:
                     pass
         if self.cache_dirty:
             self._save_city_location_cache()
-        self._interpolate_model(points, values)
+        return self._interpolate_model(points, values)
 
     def _interpolate_model(self, points, values):
         """!@brief Interpolates and saves the model.
 
-        Creates a nearest neighbor interpolation with gaussian blur, applies the land mask to the model and saves it to
-        /data/current_model.npy.
+        Creates a nearest neighbor interpolation with gaussian blur, applies the land mask to the model and returns it.
+        @return Returns the current interpolated model.
         """
         points.append([0, 0])
         values.append(2)
@@ -146,7 +159,7 @@ class BatchProcessor:
         model = griddata(points_tf, values, (x_grid, y_grid), method='nearest')
         model = gaussian_filter(model, [self.processing_sigma, self.processing_sigma])
         model[~self.land_mask] = np.nan
-        np.save(self.ROOT_PATH.joinpath('data', 'current_model'), model, allow_pickle=False)
+        return model
 
 
 if __name__ == '__main__':

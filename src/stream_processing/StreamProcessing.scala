@@ -1,22 +1,16 @@
 package sparkstreaming
 
-import java.util.HashMap
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.spark.streaming.kafka._
-import kafka.serializer.{DefaultDecoder, StringDecoder}
+import kafka.serializer.StringDecoder
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming._
-import org.apache.spark.streaming.kafka._
-import org.apache.spark.storage.StorageLevel
-import java.util.{Date, Properties}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, ProducerConfig}
 import scala.util.Random
 
 import org.apache.spark.sql.cassandra._
 import com.datastax.spark.connector._
 import com.datastax.driver.core.{Session, Cluster, Host, Metadata}
 import com.datastax.spark.connector.streaming._
+
 
 /** Stream processing node saving Kafka messages to Cassandra.
  *
@@ -40,7 +34,7 @@ object StreamProcessing {
         val conf = new SparkConf().setMaster("local[2]").setAppName("CurrentTemperatureProcessing")
         val ssc = new StreamingContext(conf, Seconds(1))
         ssc.checkpoint("./checkpoints/")
-        val kafkaConf =  Map[String, String]("metadata.broker.list" -> "localhost:9092")
+        val kafkaConf =  Map[String, String]("metadata.broker.list" -> "localhost:19092")  // Docker port 19092.
         val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaConf, Set("currentTemp"))
 
         val pairs = messages.map(x => (x._1, x._2.toDouble))
