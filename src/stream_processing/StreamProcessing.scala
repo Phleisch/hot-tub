@@ -29,12 +29,12 @@ object StreamProcessing {
         val cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
         val session = cluster.connect()
         session.execute("CREATE KEYSPACE IF NOT EXISTS hot_tub WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 1};")
-        session.execute("CREATE TABLE IF NOT EXISTS hot_tub.current (city text, time int, temperature float, PRIMARY KEY (city, time));")
+        session.execute("CREATE TABLE IF NOT EXISTS hot_tub.current (city_and_loc text, time int, temperature float, PRIMARY KEY (city_and_loc, time));")
 
         val conf = new SparkConf().setMaster("local[2]").setAppName("CurrentTemperatureProcessing")
         val ssc = new StreamingContext(conf, Seconds(1))
         ssc.checkpoint("./checkpoints/")
-        val kafkaConf =  Map[String, String]("metadata.broker.list" -> "localhost:19092")  // Docker port 19092.
+        val kafkaConf =  Map[String, String]("metadata.broker.list" -> "localhost:9092")  // Docker port 19092.
         val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaConf, Set("currentTemp"))
 
         val pairs = messages.map(x => (x._1, x._2.toDouble))
@@ -52,15 +52,16 @@ object StreamProcessing {
             val newTemp = value.getOrElse(oldTemp)
             state.update(newTemp)
             val keySplit = key.split(":")
-            val city = keySplit(0)
-            val time = keySplit(1).toInt    
-            (city, time, newTemp)
+            val city_and_loc = keySplit(0) + ":" + keySplit(1) + ":" + keySplit(2) 
+            val time = keySplit(3).toInt
+            print(city_and_loc)
+            (city_and_loc, time, newTemp)
         }
 
         val stateDstream = pairs.mapWithState(StateSpec.function(mappingFuncStream _))
 
         // store the result in Cassandra
-        stateDstream.saveToCassandra("hot_tub", "current", SomeColumns("city", "time", "temperature"))
+        stateDstream.saveToCassandra("hot_tub", "current", SomeColumns("city_and_loc", "time", "temperature"))
 
         ssc.start()
         ssc.awaitTermination()

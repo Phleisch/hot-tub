@@ -24,12 +24,12 @@ object StreamEmulator extends App {
         val cityCollection = Array("Austin", "Munich", "Stockholm", "New York")
         val time = Random.nextInt(24)
         val cityIndex = Random.nextInt(4)
-        cityCollection(cityIndex) + ":" + Integer.toString(time)
+        cityCollection(cityIndex) + ":100.90:102.28:" + Integer.toString(time)
     }
 
     // Kafka configuration.
     val topic = "currentTemp"
-    val brokers = "localhost:19092"  // Use the advertised listener port 19092 for Docker Kafka container.
+    val brokers = "localhost:9092"  // Use the advertised listener port 19092 for Docker Kafka container.
     print(brokers)
     val rnd = new Random()
 

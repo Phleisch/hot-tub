@@ -17,7 +17,7 @@ request_parameters = {
 	'units': 'metric'				# Return weather data in metric units
 }
 
-KAFKA_SERVER = 'localhost:9092'
+KAFKA_SERVER = 'localhost:9092'  # Docker container port exposed at 19092.
 CLIENT_ID = 'real_api'
 KAFKA_TOPIC = 'currentTemp'
 
@@ -28,7 +28,7 @@ producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, client_id=CLIENT_ID)
 def generate_id_list_randomly(num_cities=100, filename='all_city_ids.txt'):
 	all_city_ids = convert_file_to_list(filename)
 	indices = random.sample(range(0, len(all_city_ids)), num_cities)
-	random_city_ids = [ all_city_ids[index] for index in indices ]
+	random_city_ids = [all_city_ids[index] for index in indices ]
 	return random_city_ids
 
 def generate_id_list_from_file(filename='saved_city_ids.txt'):
@@ -51,11 +51,11 @@ def request_data_for_city_ids(city_ids):
 		city_temp = api_result['main']['temp']
 		city_coords = (api_result['coord']['lon'], api_result['coord']['lat'])
 		result_hour = datetime.fromtimestamp(api_result['dt']).hour
-		msg_val = city_name + ':' + str(city_coords[0]) + ':' + str(city_coords[1]) + ':' + str(result_hour)
+		msg_key = city_name + ':' + str(city_coords[0]) + ':' + str(city_coords[1]) + ':' + str(result_hour)
 		
-		msg_key = city_temp
-
-		producer.send(KAFKA_TOPIC, value=msg_val, key=msg_key)
+		msg_val = city_temp
+		producer.send(KAFKA_TOPIC, key=str.encode(msg_key), value=str.encode(str(msg_val)))
+	producer.send("batch")
 
 city_ids = generate_id_list_randomly()
 
