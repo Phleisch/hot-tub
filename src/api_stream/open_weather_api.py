@@ -19,7 +19,7 @@ request_parameters = {
 
 KAFKA_SERVER = 'localhost:9092'
 CLIENT_ID = 'real_api'
-KAFKA_TOPIC = 'triggerBatch'
+KAFKA_TOPIC = 'currentTemp'
 
 producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, client_id=CLIENT_ID)
 
@@ -51,10 +51,8 @@ def request_data_for_city_ids(city_ids):
 		city_temp = api_result['main']['temp']
 		city_coords = (api_result['coord']['lon'], api_result['coord']['lat'])
 		result_hour = datetime.fromtimestamp(api_result['dt']).hour
-		msg_val = city_name + ':' + city_coords[0] + ':' + city_coords[1] + ':' + result_hour
+		msg_val = city_name + ':' + str(city_coords[0]) + ':' + str(city_coords[1]) + ':' + str(result_hour)
 		
-		print(msg_val)
-
 		msg_key = city_temp
 
 		producer.send(KAFKA_TOPIC, value=msg_val, key=msg_key)
