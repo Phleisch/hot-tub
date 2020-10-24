@@ -23,6 +23,7 @@ class Api_Handler():
         self.calls_made = {}
         self.api_key_index_lock = threading.Lock()
         self.calls_made_lock = threading.Lock()
+        self.failed_counter = 0
 
     def get_weather_info(self, city_id):
         """
@@ -66,10 +67,15 @@ class Api_Handler():
             # Increment how many calls have been made this minute to keep track
             # of rate limiting
             self.increment_calls_per_minute()
-            api_result = requests.get(Api_Handler.URL, params=request_params)
+            try:
+                api_result = requests.get(Api_Handler.URL, params=request_params)
+            except:  # noqa: E722
+                self.failerd_counter += 1
+                print(f'Request failed! Total request failures: {self.failed_counter}')
+                continue
             if api_result.status_code == Api_Handler.EXPECTED_API_STATUS_CODE:
                 return api_result.json()
-        return None
+        return
 
     def increment_calls_per_minute(self):
         """
