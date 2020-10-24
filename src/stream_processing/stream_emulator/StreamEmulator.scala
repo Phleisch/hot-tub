@@ -13,7 +13,7 @@ object StreamEmulator extends App {
 
     /** Returns a random value between -20 and 20 as string. */
     def getRandomVal: String = {
-        ((Random.nextFloat() - 0.5) - 40).toString()
+        ((Random.nextFloat() - 0.5) * 40).toString()
     }
 
     /** Returns a single string with a city:time combination.
