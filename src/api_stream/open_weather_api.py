@@ -1,30 +1,18 @@
-import requests
+from threading import Thread
 import random
 import sys
 import os
 from datetime import datetime
 from kafka import KafkaProducer
+from api_handler import Api_Handler
+from api_worker import Api_Worker
 
 # Retrieve the API key stored as an environment variable
-OPEN_WEATHER_API_KEY = os.environ['OPEN_WEATHER_API_KEY']
-
-# The URL to send API requests
-API_URL = 'https://api.openweathermap.org/data/2.5/weather?'
-
-request_parameters = {
-	'id': 0,						# Unique City ID for which to get data
-	'appid': OPEN_WEATHER_API_KEY,	# API key
-	'units': 'metric'				# Return weather data in metric units
-}
+OPEN_WEATHER_API_KEY_1 = os.environ['OPEN_WEATHER_API_KEY_1']
+OPEN_WEATHER_API_KEY_2 = os.environ['OPEN_WEATHER_API_KEY_2']
 
 KAFKA_SERVER = 'localhost:9092'  # Docker container port exposed at 19092.
 CLIENT_ID = 'real_api'
-
-# Kafka topic where temperature messsages should be posted
-KAFKA_TOPIC = 'currentTemp'
-
-# The status code required to accept an API result
-EXPECTED_API_STATUS_CODE = 200
 
 # Object used for sending temperature update messages to a Kafka topic
 producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, client_id=CLIENT_ID)
@@ -51,56 +39,58 @@ def generate_id_list_randomly(num_cities=100, filename='all_city_ids.txt'):
 	random_city_ids = [all_city_ids[index] for index in indices]
 	return random_city_ids
 
-def get_id(coord_buckets, lat, lon):
-	return_id = None
+#def get_id(coord_buckets, lat, lon):
+#	return_id = None
+#
+#	if coord_buckets.get(lat) is not None:
+#		id_list = coord_buckets[lat].get(lon)
+#
+#		if id_list is not None:
+#			return_id = id_list.pop()
+#
+#			if len(id_list) == 0:
+#				coord_buckets.pop(lon)
+#	
+#	return return_id
 
-	if coord_buckets.get(lat) is not None:
-		id_list = coord_buckets[lat].get(lon)
-
-		if id_list is not None:
-			return_id = id_list.pop()
-
-			if len(id_list) == 0:
-				coord_buckets.pop(lon)
-	
-	return return_id
-
-def generate_id_list_by_evenly_distributed_coordinates(num_ids=100):
-	# The real life range of values that a latitude may take on
-	min_lat = -90
-	max_lat = 90
-
-	# The real life range of values that a longitude may take on
-	min_lon = -180
-	max_lon = 180
-
-	# upper range on the number of latitude buckets (will always be 181) 
-	num_lat_buckets = (max_lat - min_lat) + 1
-	
-	# approximate number of ids that may be chosen from each latitude bucket
-	ids_per_lat_bucket = int(num_ids / num_lat_buckets) + 1
-	lon_increment = int(((max_lon - min_lon) + 1) / lon_per_lat_bucket)
-
-	# List of ids being generated
-	id_list = list()
-
-	# Evenly pick ids from each latitude bucket
-	for curr_lat in range(min_lat, max_lat + 1):
-		for curr_lon in range(min_lon, max_lon + 1, lon_increment):
-			temp_lon = curr_lon
-
-			# Iteratively try longitudes from curr_lon to
-			# curr_lon + lon_increment until an id is found
-			while city_id is None and temp_lon < curr_lon + lon_increment:
-				city_id = get_value(dictionary, [curr_lat, temp_lon])
-				temp_lon = temp_lon + 1
-
-			# If there was a value at curr_lat, curr_lon in the dictionary
-			if city_id:
-				id_list.append(city_id)
-	
-	# 
-	while len(id_list) < num_ids:
+#def generate_id_list_by_evenly_distributed_coordinates(num_ids=100):
+#	# The real life range of values that a latitude may take on
+#	min_lat = -90
+#	max_lat = 90
+#
+#	# The real life range of values that a longitude may take on
+#	min_lon = -180
+#	max_lon = 180
+#
+#	# upper range on the number of latitude buckets (will always be 181) 
+#	num_lat_buckets = (max_lat - min_lat) + 1
+#	
+#	# approximate number of ids that may be chosen from each latitude bucket
+#	ids_per_lat_bucket = int(num_ids / num_lat_buckets) + 1
+#	lon_increment = int(((max_lon - min_lon) + 1) / lon_per_lat_bucket)
+#
+#	# List of ids being generated
+#	id_list = list()
+#
+#	# Evenly pick ids from each latitude bucket
+#	for curr_lat in range(min_lat, max_lat + 1):
+#		for curr_lon in range(min_lon, max_lon + 1, lon_increment):
+#			temp_lon = curr_lon
+#
+#			# Iteratively try longitudes from curr_lon to
+#			# curr_lon + lon_increment until an id is found
+#			while city_id is None and temp_lon < curr_lon + lon_increment:
+#				city_id = get_value(dictionary, [curr_lat, temp_lon])
+#				temp_lon = temp_lon + 1
+#
+#			# If there was a value at curr_lat, curr_lon in the dictionary
+#			if city_id:
+#				id_list.append(city_id)
+#	
+#	# Fill up the rest of the queue by going through each 
+#	while len(id_list) < num_ids:
+#		curr_lat = min_lat
+#		while curr_lat < max_lat and len(id_list) < num_ids:
 		
 
 def create_coord_buckets_for_ids(filename='ids_and_coords.txt'):
@@ -161,82 +151,26 @@ def generate_id_list_from_file(filename='saved_city_ids.txt'):
 
 	return file_as_list
 
-def call_api_with_retries(num_retries=3):
-	"""
-	Attempt an API call until successful or until the retry limit has been
-	reached. A successful API call is one that has a status code of 200. Return
-	the result of the API call.
-
-	@param num_retries	Maximum number of times to try an API call if the call
-						is failing
-	
-	@return the result of the API call or None if the API call never succeeded
+def produce_messages_with_n_workers(num_workers=2):
 	"""
 
-	for _ in range(0, num_retries):
-		api_result = requests.get(API_URL, params=request_parameters)
-	
-		if api_result.status_code == EXPECTED_API_STATUS_CODE:
-			return api_result.json()
-	
-	return None
-
-def produce_kafka_message(api_result):
-	"""
-	From the result of a weather API call, produce a message to a Kafka topic
-	with key of the format 'city name:city longitude:city latitude:hour of day'
-	and value 'current city temperature'.
-
-	@param api_result	Result of a weather API call, used to produce a message
 	"""
 
-	# Extract important the values of a city we care about from the API result
-	# and convert to a string where necessary for evaluation as a single string
-	# later on
-	city_name = api_result['name']
-	city_temp = str(api_result['main']['temp'])
-	city_lon = str(api_result['coord']['lon'])
-	city_lat = str(api_result['coord']['lat'])
+	api_keys = [OPEN_WEATHER_API_KEY_1, OPEN_WEATHER_API_KEY_2]
+	api_handler = Api_Handler(api_keys)
+	city_ids = generate_id_list_randomly()
+	ids_per_worker = int(len(city_ids) / num_workers) + 1
+	threads = list()
 
-	# From the date that the API response was created, we only want the hour of
-	# the day, from 0 to 23
-	result_hour = str(datetime.fromtimestamp(api_result['dt']).hour)
+	for worker_id in range(0, num_workers):
+		min_index = ids_per_worker * worker_id
+		max_index = min(len(city_ids), (worker_id + 1) * ids_per_worker)
+		id_subset = city_ids[min_index:max_index] 
+		thread = Api_Worker(id_subset, api_handler, producer)
+		thread.start()
+		threads.append(thread)
 
-	# Join values to construct a key (described above) using colons, transform
-	# to bytes as required by the KafkaProducer send function
-	msg_key = str.encode(':'.join([city_name, city_lon, city_lat, result_hour]))
-	msg_val = str.encode(city_temp)
+	for thread in threads:
+		thread.join()
 
-	# Send a message to Kafka
-	producer.send(KAFKA_TOPIC, key=msg_key, value=msg_val)
-
-def produce_messages_for_city_ids(city_ids):
-	"""
-	Given a list of city ids, make API calls for each ID in order to retrieve
-	current city weather information and then produce a Kafka message from that
-	information.
-
-	@param city_ids	List of city ids for which weather information should be
-					retrieved via an API call to OpenWeatherMap
-	"""
-
-	for city_id in city_ids:
-		# Set the id to that of the current city in the request parameters used
-		# to make an API call
-		request_parameters['id'] = city_id
-		api_result = call_api_with_retries()
-	
-		# If the api_result is not None (API call was successful), produce a
-		# Kafka message
-		if api_result:
-			produce_kafka_message(api_result)
-
-	# Once done sending a message to Kafka with temperature data for every city
-	# in the city_ids list, then produce a message to Kafka to invoke batch
-	# processing of the sent temperature messsages
-	producer.send("batch")
-
-city_ids = generate_id_list_randomly()
-
-while 1:
-	produce_messages_for_city_ids(city_ids)
+produce_messages_with_n_workers()
