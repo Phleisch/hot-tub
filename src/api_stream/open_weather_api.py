@@ -191,6 +191,7 @@ def produce_messages_with_n_workers(num_workers=2):
 	keys_file.close()
 	api_handler = Api_Handler(api_keys)
 	city_ids = [city_id.strip() for city_id in ids_file]
+	print(city_ids)
 	ids_file.close()
 	ids_per_worker = int(len(city_ids) / num_workers) + 1
 	threads = list()
