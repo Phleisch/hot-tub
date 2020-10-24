@@ -10,7 +10,7 @@ KAFKA_SERVER = 'localhost:9092'  # Docker container port exposed at 19092.
 CLIENT_ID = 'real_api'
 
 # Object used for sending temperature update messages to a Kafka topic
-# producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, client_id=CLIENT_ID)
+producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, client_id=CLIENT_ID)
 
 def generate_id_list_randomly(num_cities=100, filename='all_city_ids.txt'):
 	"""
