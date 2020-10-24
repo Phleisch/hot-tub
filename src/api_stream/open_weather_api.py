@@ -186,10 +186,12 @@ def produce_messages_with_n_workers(num_workers=2):
 	"""
 
 	keys_file = open('keys.txt', 'r')
+	ids_file = open('ids.txt', 'r')
 	api_keys = [key.strip() for key in keys_file]
 	keys_file.close()
 	api_handler = Api_Handler(api_keys)
-	city_ids = generate_id_by_evenly_distributed_coordinates()
+	city_ids = [city_id.strip() for city_id in ids_file]
+	ids_file.close()
 	ids_per_worker = int(len(city_ids) / num_workers) + 1
 	threads = list()
 
