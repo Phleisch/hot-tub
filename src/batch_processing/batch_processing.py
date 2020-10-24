@@ -33,7 +33,7 @@ class BatchProcessor:
         self.num_api_workers = 1
         self.key_space_name = 'hot_tub'
         self.table_name = 'current'
-        self.processing_sigma = 3  # Value for gaussian filtering during model postprocessing. Modify if necessary.
+        self.processing_sigma = 5  # Value for gaussian filtering during model postprocessing. Modify if necessary.
         self.land_mask = np.load(self.ROOT_PATH.joinpath('data', 'mask_model.npy'))
         self.reference_model_loader = ReferenceModelLoader()
         os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.datastax.spark:spark-cassandra-connector_2.11:2.3.0 \

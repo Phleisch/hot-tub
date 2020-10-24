@@ -51,3 +51,9 @@ services:
     depends_on:
       - "kafka"
       - "cassandra"
+  api_stream:
+    build: ./src/api_stream/
+    container_name: api_stream
+    network_mode: host
+    depends_on:
+      - "kafka"
