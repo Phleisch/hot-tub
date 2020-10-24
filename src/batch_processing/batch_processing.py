@@ -73,7 +73,7 @@ class BatchProcessor:
         fig, ax = plt.subplots(figsize=(20, 10))
         ax.set_title('Current temperature difference compared to preindustrial times.')
         cmap = sns.color_palette("coolwarm", as_cmap=True)
-        plot = sns.heatmap(model, ax=ax, vmin=-10, vmax=10, xticklabels=False, yticklabels=False, cmap=cmap,
+        plot = sns.heatmap(model, ax=ax, vmin=-20, vmax=20, xticklabels=False, yticklabels=False, cmap=cmap,
                            cbar_kws={'label': 'Temperature difference in °C'})
         plot.get_figure().savefig(self.ROOT_PATH.joinpath('src', 'webserver', 'static', 'global_temp_diff_map.png'))
         plt.close(fig)

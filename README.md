@@ -2,7 +2,7 @@
 
 # Hot Tub
 
-![hot tub logo](/media/logo.png "Hot Tub Logo")
+![hot tub logo](/media/hot_tub_logo.png "Hot Tub Logo")
 
 </div>
 

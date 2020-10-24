@@ -31,7 +31,7 @@ services:
     container_name: cassandra
     environment:
       - HEAP_NEWSIZE=128M
-      - MAX_HEAP_SIZE=2048M
+      - MAX_HEAP_SIZE=1536M
     volumes: 
       - ./data:/var/lib/cassandra
     network_mode: host
