@@ -9,15 +9,14 @@
 
 
 Project for Data-Intensive Computing (ID2221) at KTH Royal Institute of
-Technology. Created by Kai Fleischman & Martin Schuck.
+Technology. Created by Martin Schuck & Kai Fleischmann.
 
 ## Structure
-![hot tub structure](/media/hot_tub.jpeg "Hot Tub internal structure")
+![hot tub structure](/media/hot_tub_schema.png "Hot Tub internal structure")
 
 ## DockerCompose
 
-All services can be started by first cleaning the environment:
-docker-compose rm -svf
-
-This avoids the ephemeral error with kafka. Then launch
+All services can be started by using Docker compose:
 docker-compose up
+
+The webserver should be reachable at localhost:5000
