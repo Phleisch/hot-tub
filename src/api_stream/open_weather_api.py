@@ -3,7 +3,7 @@ import random
 import sys
 import os
 from datetime import datetime
-from kafka import KafkaProducer
+#from kafka import KafkaProducer
 
 # Retrieve the API key stored as an environment variable
 OPEN_WEATHER_API_KEY = os.environ['OPEN_WEATHER_API_KEY']
@@ -21,7 +21,9 @@ KAFKA_SERVER = 'localhost:9092'
 CLIENT_ID = 'real_api'
 KAFKA_TOPIC = 'currentTemp'
 
-producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, client_id=CLIENT_ID)
+EXPECTED_API_STATUS_CODE = 200
+
+#producer = KafkaProducer(bootstrap_servers=KAFKA_SERVER, client_id=CLIENT_ID)
 
 # Get a list with num_cities many entries defining the cities for which hourly
 # weather data should be retrieved
@@ -43,21 +45,36 @@ def convert_file_to_list(filename):
 
 	return file_as_list
 
-def request_data_for_city_ids(city_ids):
+def call_api_with_retries(num_retries=3):
+	for _ in range(0, num_retries):
+		api_result = requests.get(API_URL, params=request_parameters)
+		
+		if api_result.status_code == EXPECTED_API_STATUS_CODE:
+			return api_result.json()
+	
+	return None
+
+def produce_kafka_message(api_result):
+	city_name = api_result['name']
+	city_temp = str(api_result['main']['temp'])
+	city_lon = str(api_result['coord']['lon'])
+	city_lat = str(api_result['coord']['lat'])
+	result_hour = str(datetime.fromtimestamp(api_result['dt']).hour)
+	msg_key = str.encode(':'.join([city_name, city_lon, city_lat, result_hour]))
+	msg_val = str.encode(city_temp)
+	#producer.send(KAFKA_TOPIC, key=msg_key, value=msg_val)
+
+def produce_messages_for_city_ids(city_ids):
 	for city_id in city_ids:
 		request_parameters['id'] = city_id
-		api_result = requests.get(API_URL, params=request_parameters).json()
-		city_name = api_result['name']
-		city_temp = api_result['main']['temp']
-		city_coords = (api_result['coord']['lon'], api_result['coord']['lat'])
-		result_hour = datetime.fromtimestamp(api_result['dt']).hour
-		msg_key = city_name + ':' + str(city_coords[0]) + ':' + str(city_coords[1]) + ':' + str(result_hour)
+		api_result = call_api_with_retries()
 		
-		msg_val = city_temp
-		producer.send(KAFKA_TOPIC, key=str.encode(msg_key), value=str.encode(str(msg_val)))
-	producer.send("batch")
+		if api_result:
+			produce_kafka_message(api_result)
+
+	#producer.send("batch")
 
 city_ids = generate_id_list_randomly()
 
 while 1:
-	request_data_for_city_ids(city_ids)
+	produce_messages_for_city_ids(city_ids)
