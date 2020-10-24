@@ -17,7 +17,7 @@ request_parameters = {
 	'units': 'metric'				# Return weather data in metric units
 }
 
-KAFKA_SERVER = 'localhost:9092'  # Docker container port exposed at 19092.
+KAFKA_SERVER = 'localhost:9092'
 CLIENT_ID = 'real_api'
 KAFKA_TOPIC = 'currentTemp'
 

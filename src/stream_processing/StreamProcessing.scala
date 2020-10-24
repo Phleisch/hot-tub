@@ -2,6 +2,12 @@ package sparkstreaming
 
 import org.apache.spark.streaming.kafka._
 import kafka.serializer.StringDecoder
+
+import java.util.Arrays
+import java.util.Properties
+import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.clients.admin.{AdminClient, AdminClientConfig}
+
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming._
 import scala.util.Random
@@ -30,35 +36,41 @@ object StreamProcessing {
         val session = cluster.connect()
         session.execute("CREATE KEYSPACE IF NOT EXISTS hot_tub WITH REPLICATION = {'class' : 'SimpleStrategy', 'replication_factor' : 1};")
         session.execute("CREATE TABLE IF NOT EXISTS hot_tub.current (city_and_loc text, time int, temperature float, PRIMARY KEY (city_and_loc, time));")
+        
+        
+        // Init Kafka topic if not existent.
+        val config = new Properties()
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092")
+        val localKafkaAdmin = AdminClient.create(config)
+        val topic = new NewTopic("currentTemp", 1, 1)
+        val topics = Arrays.asList(topic)
+
+        val topicStatus = localKafkaAdmin.createTopics(topics).values()
+
 
         val conf = new SparkConf().setMaster("local[2]").setAppName("CurrentTemperatureProcessing")
         val ssc = new StreamingContext(conf, Seconds(1))
         ssc.checkpoint("./checkpoints/")
-        val kafkaConf =  Map[String, String]("metadata.broker.list" -> "localhost:9092")  // Docker port 19092.
+        val kafkaConf =  Map[String, String]("metadata.broker.list" -> "localhost:9092")
         val messages = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaConf, Set("currentTemp"))
 
         val pairs = messages.map(x => (x._1, x._2.toDouble))
 
         /** Returns a tuple of (city, time, newTemp).
          *
-         * Stateful stream mapping. Splits the key into the city name, the record time and combines the values to a 
-         * single return tuple. Uses the old value if the optional value is not present. Incoming keys are of form 
-         * (<Cityname>:<Time>, <Temperature>)
+         * Stream mapping. Splits the key into the city name, the record time and combines the values to a single return
+         * tuple. Incoming keys are of form (<Cityname>:<longitude>:<latitude>:<Time>, <Temperature>)
          *
-         * @return A tuple of (city, time, newTemp).
+         * @return A tuple of (city, time, value).
          */
-        def mappingFuncStream(key: String, value: Option[Double], state: State[Double]): (String, Integer, Double) = {
-            val oldTemp = state.getOption.getOrElse(value.getOrElse(0.0))
-            val newTemp = value.getOrElse(oldTemp)
-            state.update(newTemp)
+        def mappingFuncStream(key: String, value: Double): (String, Integer, Double) = {
             val keySplit = key.split(":")
             val city_and_loc = keySplit(0) + ":" + keySplit(1) + ":" + keySplit(2) 
             val time = keySplit(3).toInt
-            print(city_and_loc)
-            (city_and_loc, time, newTemp)
+            (city_and_loc, time, value)
         }
 
-        val stateDstream = pairs.mapWithState(StateSpec.function(mappingFuncStream _))
+        val stateDstream = pairs.map(x => mappingFuncStream(x._1, x._2))
 
         // store the result in Cassandra
         stateDstream.saveToCassandra("hot_tub", "current", SomeColumns("city_and_loc", "time", "temperature"))

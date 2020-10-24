@@ -13,7 +13,7 @@ object StreamEmulator extends App {
 
     /** Returns a random value between -20 and 20 as string. */
     def getRandomVal: String = {
-        ((Random.nextFloat() - 0.5) + 40).toString()
+        ((Random.nextFloat() - 0.5) - 40).toString()
     }
 
     /** Returns a single string with a city:time combination.
@@ -21,16 +21,15 @@ object StreamEmulator extends App {
      * Times range from 0 to 23 (as string). Example: Austin:19.
      */
     def getRandomKey: String = {
-        val cityCollection = Array("Austin", "Munich", "Stockholm", "New York")
+        val cityCollection = Array("Austin:30.26:-97.76", "Munich:48.08:13.75", "Stockholm:59.20:18.03", "New York:40.43:-73.56")
         val time = Random.nextInt(24)
         val cityIndex = Random.nextInt(4)
-        cityCollection(cityIndex) + ":100.90:102.28:" + Integer.toString(time)
+        cityCollection(cityIndex) + ":" + Integer.toString(time)
     }
 
     // Kafka configuration.
     val topic = "currentTemp"
-    val brokers = "localhost:9092"  // Use the advertised listener port 19092 for Docker Kafka container.
-    print(brokers)
+    val brokers = "localhost:9092"
     val rnd = new Random()
 
     val props = new Properties()
@@ -41,12 +40,13 @@ object StreamEmulator extends App {
     val producer = new KafkaProducer[String, String](props)
 
     // Message producer loop.
-    while (true) {
-        val data = new ProducerRecord[String, String](topic, getRandomKey, getRandomVal)
-        producer.send(data)
-        print(data + "\n")
-        Thread.sleep(100)
+    while (true){
+        for (x <- 0 to 60) {
+            val data = new ProducerRecord[String, String](topic, getRandomKey, getRandomVal)
+            producer.send(data)
+            print(data + "\n")
+        }
+        Thread.sleep(10000)
     }
-
     producer.close()
 }
