@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import numpy as np
 from pathlib import Path
@@ -31,7 +33,7 @@ class BatchProcessor:
         self.num_api_workers = 1
         self.key_space_name = 'hot_tub'
         self.table_name = 'current'
-        self.processing_sigma = 0  # Value for gaussian filtering during model postprocessing. Modify if necessary.
+        self.processing_sigma = 3  # Value for gaussian filtering during model postprocessing. Modify if necessary.
         self.land_mask = np.load(self.ROOT_PATH.joinpath('data', 'mask_model.npy'))
         self.reference_model_loader = ReferenceModelLoader()
         os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.datastax.spark:spark-cassandra-connector_2.11:2.3.0 \
@@ -69,7 +71,10 @@ class BatchProcessor:
         reference_model = self.reference_model_loader.load_model(day)
         model = curr_model - reference_model
         fig, ax = plt.subplots(figsize=(20, 10))
-        plot = sns.heatmap(model, ax=ax, vmin=-50, vmax=50, xticklabels=False, yticklabels=False)
+        ax.set_title('Current temperature difference compared to preindustrial times.')
+        cmap = sns.color_palette("coolwarm", as_cmap=True)
+        plot = sns.heatmap(model, ax=ax, vmin=-10, vmax=10, xticklabels=False, yticklabels=False, cmap=cmap,
+                           cbar_kws={'label': 'Temperature difference in °C'})
         plot.get_figure().savefig(self.ROOT_PATH.joinpath('src', 'webserver', 'static', 'global_temp_diff_map.png'))
         plt.close(fig)
 
@@ -94,7 +99,7 @@ class BatchProcessor:
         points = list()
         values = list()
         for city_and_loc, temperature in data.items():
-            _, lat, lon = self._unpack_city(city_and_loc)
+            _, lon, lat = self._unpack_city(city_and_loc)
             points.append([lat, lon])
             values.append(temperature)
         return self._interpolate_model(points, values)

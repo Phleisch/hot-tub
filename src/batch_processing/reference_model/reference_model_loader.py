@@ -20,10 +20,10 @@ class ReferenceModelLoader:
     ROOT_PATH = Path(__file__).resolve().parents[3]  # Repository root path.
 
     def __init__(self):
-        """!@brief Class constructor loads the historical_average.csv file and the land mask matrix into memory for fast
-        access.
+        """!@brief Class constructor loads the land mask matrix into memory for fast access. 
+        
+        Larger dataset historical_average.csv is dropped during each load to save memory.
         """
-        self.model_df = pd.read_csv(self.ROOT_PATH.joinpath('data', 'historical_average.csv'))
         self.land_mask = np.load(self.ROOT_PATH.joinpath('data', 'mask_model.npy'), allow_pickle=False)
         self.model = dict()
 
@@ -44,8 +44,9 @@ class ReferenceModelLoader:
 
         @param day Day of the year to load (from 0 to 364). Type int.
         """
-        assert(day in self.model_df['day_number'].unique())
-        df = self.model_df[self.model_df['day_number'] == day]
+        model_df = pd.read_csv(self.ROOT_PATH.joinpath('data', 'historical_average.csv'))
+        assert(day in model_df['day_number'].unique())
+        df = model_df[model_df['day_number'] == day]
 
         x_grid, y_grid = np.mgrid[-450:450, -900:900]
         points = np.vstack((df.latitude * 5, df.longitude * 5)).T
@@ -53,6 +54,7 @@ class ReferenceModelLoader:
         model = np.flipud(griddata(points, values, (x_grid, y_grid), method='cubic'))
         model[~self.land_mask] = np.nan
         self.model[day] = model
+        del model_df
 
     def plot_model(self, day):
         """!@brief Plots the global reference temperature model.
