@@ -156,7 +156,9 @@ def produce_messages_with_n_workers(num_workers=2):
 
 	"""
 
-	api_keys = [OPEN_WEATHER_API_KEY_1, OPEN_WEATHER_API_KEY_2]
+	keys_file = open('keys.txt', 'r')
+	api_keys = [key.strip() for key in keys_file]
+	keys_file.close()
 	api_handler = Api_Handler(api_keys)
 	city_ids = generate_id_list_randomly()
 	ids_per_worker = int(len(city_ids) / num_workers) + 1
