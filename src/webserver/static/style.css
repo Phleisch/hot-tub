@@ -2,6 +2,11 @@ body {
 	margin: 0;
 }
 
+a {
+ text-decoration: none;
+}
+
+
 div {
 	position: relative;
 	height: 100%;
@@ -42,6 +47,18 @@ div {
 	width: 45%;
 	height: 100%;
 	display: inline-block;
+}
+
+.about h1 {
+	font-size: 54px;
+}
+
+.about p {
+	font-size: 28px;
+}
+
+.selected {
+	text-decoration: underline;	
 }
 
 .temperature_map {
