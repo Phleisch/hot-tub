@@ -33,7 +33,7 @@ class BatchProcessor:
         self.num_api_workers = 1
         self.key_space_name = 'hot_tub'
         self.table_name = 'current'
-        self.processing_sigma = 3  # Value for gaussian filtering during model postprocessing. Modify if necessary.
+        self.processing_sigma = 5  # Value for gaussian filtering during model postprocessing. Modify if necessary.
         self.land_mask = np.load(self.ROOT_PATH.joinpath('data', 'mask_model.npy'))
         self.reference_model_loader = ReferenceModelLoader()
         os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.datastax.spark:spark-cassandra-connector_2.11:2.3.0 \
@@ -73,7 +73,7 @@ class BatchProcessor:
         fig, ax = plt.subplots(figsize=(20, 10))
         ax.set_title('Current temperature difference compared to preindustrial times.')
         cmap = sns.color_palette("coolwarm", as_cmap=True)
-        plot = sns.heatmap(model, ax=ax, vmin=-10, vmax=10, xticklabels=False, yticklabels=False, cmap=cmap,
+        plot = sns.heatmap(model, ax=ax, vmin=-20, vmax=20, xticklabels=False, yticklabels=False, cmap=cmap,
                            cbar_kws={'label': 'Temperature difference in °C'})
         plot.get_figure().savefig(self.ROOT_PATH.joinpath('src', 'webserver', 'static', 'global_temp_diff_map.png'))
         plt.close(fig)

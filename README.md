@@ -2,7 +2,7 @@
 
 # Hot Tub
 
-![hot tub logo](/media/logo.png "Hot Tub Logo")
+![hot tub logo](/media/hot_tub_logo.png "Hot Tub Logo")
 
 </div>
 
@@ -12,7 +12,7 @@ Project for Data-Intensive Computing (ID2221) at KTH Royal Institute of
 Technology. Created by Martin Schuck & Kai Fleischmann.
 
 ## Structure
-![hot tub structure](/media/hot_tub_schema.png "Hot Tub internal structure")
+![hot tub structure](/media/hot_tub_scheme.png "Hot Tub internal structure")
 
 ## DockerCompose
 
