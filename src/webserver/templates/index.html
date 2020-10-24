@@ -9,27 +9,27 @@
 
 		<!-- Make sure to actually insert the sad_sun image sometime -->
 	    <link rel="icon" href="{{url_for('static', filename='sad_sun.png')}}">
+		<link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
 
         <title>Hot Tub</title>
 	</head>
 	
 	<body>
-		<img src="{{ temperature_map }}">
-		<div class="container text-center container-fluid">
-		  <h1 class="display-3">Hot Tub</h1>
-		  <p class="lead">The world is on fire.</p>
-		  <hr class="my-4">
-		  <p class="lead">
-		  </p>
-		<div>		  
-		
-		<!--
-		<div class="footer-copyright py-3 text-center">
-              <div class="container-fluid">
-                  © 2018 Copyright: Matthew Bass, Kai Fleischman, Michael Lobsenz, Jonathon Martin, Arvind Raghavan
-      
-              </div>
-         </div>
-		-->
+		<div class="top_banner">
+			<a>Home</a>
+			<h1>Hot-Tub</h1>
+			<a href="/about">About</a>
+		</div>
+		<div>
+			<div class="div_paragraph">
+				<p>Yooooooooo</p>
+			</div>
+			<div class="temperature_map">
+				<img src="{{ temperature_map }}">
+			</div>
+			<div class="div_paragraph">
+				<p>Hey wassup</p>
+			</div>
+		</div>
 	</body>
 </html>
