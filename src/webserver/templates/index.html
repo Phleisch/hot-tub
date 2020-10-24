@@ -7,6 +7,9 @@
 	    <meta name="description" content="">
 	    <meta name="author" content="">
 
+		<!-- Automatically refresh the webpage every 20 seconds -->
+		<meta http-equiv="refresh" content="20" >
+
 		<!-- Make sure to actually insert the sad_sun image sometime -->
 	    <link rel="icon" href="{{url_for('static', filename='sad_sun.png')}}">
 		<link rel="stylesheet" href="{{url_for('static', filename='style.css')}}">
@@ -20,16 +23,8 @@
 			<h1>Hot-Tub</h1>
 			<a href="/about">About</a>
 		</div>
-		<div>
-			<div class="div_paragraph">
-				<p>Yooooooooo</p>
-			</div>
-			<div class="temperature_map">
-				<img src="{{ temperature_map }}">
-			</div>
-			<div class="div_paragraph">
-				<p>Hey wassup</p>
-			</div>
+		<div class="temperature_map">
+			<img src="{{ temperature_map }}">
 		</div>
 	</body>
 </html>

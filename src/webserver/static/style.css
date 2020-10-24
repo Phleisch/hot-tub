@@ -24,22 +24,33 @@ div {
 	width: 33%;
 	color: #FFFFFF;
 	font-size: 46px;
-	display:inline-block;
+	display: inline-block;
 	text-align: center;
 }
 
-.div_paragraph {
-	position: relative;
+.logo {
+	width: 45%;
 	display: inline-block;
-	width: 10%;
+	margin-left: 5%;
+}
+
+.logo img {
+	width: 100%;
+}
+
+.about {
+	width: 45%;
+	height: 100%;
+	display: inline-block;
 }
 
 .temperature_map {
 	position: relative;
-	width: 80%;
+	width: 100%;
 	display: inline-block;
 }
 
 .temperature_map img {
-	width: 100%;
+	width: 86%;
+	margin-left: 7%;
 }
