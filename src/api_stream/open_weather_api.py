@@ -28,15 +28,19 @@ def generate_id_list_randomly(num_cities=100, filename='all_city_ids.txt'):
 	@return a list of city ids equal in length to num_cities
 	"""
 
+	antarctica_id = 6255152
+
 	# Create a list from which random city ids should be sampled
 	all_city_ids = generate_id_list_from_file(filename)
 
 	# Randomly and uniquely select num_cities number within range 0 to the
 	# total number of city ids (length of all_city_ids)
-	indices = random.sample(range(0, len(all_city_ids)), num_cities)
+	indices = random.sample(range(0, len(all_city_ids)), num_cities - 1)
 
 	# Use list of indices to generate a list of city ids
 	random_city_ids = [all_city_ids[index] for index in indices]
+	random_city_ids.append(antarctica_id)
+
 	return random_city_ids
 
 #def get_id(coord_buckets, lat, lon):
