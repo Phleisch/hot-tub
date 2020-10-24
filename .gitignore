@@ -16,3 +16,4 @@ __pycache__
 /data/commitlog
 /data/data
 /src/webserver/static/global_temp_diff_map.png
+/.vscode

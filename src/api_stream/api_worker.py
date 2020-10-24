@@ -41,7 +41,7 @@ class Api_Worker(threading.Thread):
 		msg_val = str.encode(city_temp)
 
 		# Send a message to Kafka
-		self.kafka_producer.send(KAFKA_TOPIC, key=msg_key, value=msg_val)
+		self.kafka_producer.send(self.KAFKA_TOPIC, key=msg_key, value=msg_val)
 
 	def run(self):
 		"""
