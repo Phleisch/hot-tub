@@ -182,13 +182,12 @@ def generate_id_list_from_file(filename='saved_city_ids.txt'):
 
 def produce_messages_with_n_workers(num_workers=2):
     """
-
     """
-    keys_file = open('keys.txt', 'r')
-    api_keys = [key.strip() for key in keys_file]
-    keys_file.close()
+    with open('keys.txt', 'r') as f:
+        api_keys = [key.strip() for key in f]
+    with open('ids.txt', 'r') as f:
+        city_ids = [city_id.strip() for city_id in f]
     api_handler = Api_Handler(api_keys)
-    city_ids = generate_id_list_by_evenly_distributed_coordinates()
     ids_per_worker = int(len(city_ids) / num_workers) + 1
     threads = list()
 
