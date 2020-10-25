@@ -31,7 +31,7 @@ The webserver should be reachable at localhost:5000.
 > in the files. It can be downloaded from http://berkeleyearth.org/archive/data/.
 
 ## Documentation
-Both the project proposal and the final report can be found in the [documentation](/documentation) folder. 
+Both the [project proposal](/documentation/proposal.pdf) and the [final report](/documentation/final_report.pdf) can be found in the documentation folder. 
 It also contains a detailed code documentation. You can access the documentation by running 
 
 > ```sh
