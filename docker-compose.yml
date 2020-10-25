@@ -57,3 +57,10 @@ services:
     network_mode: host
     depends_on:
       - "kafka"
+  webserver:
+    build: ./src/webserver/
+    container_name: webserver
+    volumes:
+    - ./src/webserver:/usr/src/app
+    ports:
+      - "5000:5000"

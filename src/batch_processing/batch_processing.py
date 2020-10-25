@@ -33,7 +33,7 @@ class BatchProcessor:
         self.num_api_workers = 1
         self.key_space_name = 'hot_tub'
         self.table_name = 'current'
-        self.processing_sigma = 5  # Value for gaussian filtering during model postprocessing. Modify if necessary.
+        self.processing_sigma = 20  # Value for gaussian filtering during model postprocessing. Modify if necessary.
         self.land_mask = np.load(self.ROOT_PATH.joinpath('data', 'mask_model.npy'))
         self.reference_model_loader = ReferenceModelLoader()
         os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages com.datastax.spark:spark-cassandra-connector_2.11:2.3.0 \
@@ -54,8 +54,10 @@ class BatchProcessor:
         server at /src/webserver/static.
         """
         while True:
+            print("Starting batch processing", flush=True)
             self.batch_processing()
-            time.sleep(60)
+            print("Finished batch processing", flush=True)
+            time.sleep(10)
 
     def batch_processing(self):
         """!@brief Processes the table data from Cassandra, creates a model from it and saves it.
@@ -73,7 +75,7 @@ class BatchProcessor:
         fig, ax = plt.subplots(figsize=(20, 10))
         ax.set_title('Current temperature difference compared to preindustrial times.')
         cmap = sns.color_palette("coolwarm", as_cmap=True)
-        plot = sns.heatmap(model, ax=ax, vmin=-20, vmax=20, xticklabels=False, yticklabels=False, cmap=cmap,
+        plot = sns.heatmap(model, ax=ax, vmin=-10, vmax=10, xticklabels=False, yticklabels=False, cmap=cmap,
                            cbar_kws={'label': 'Temperature difference in °C'})
         plot.get_figure().savefig(self.ROOT_PATH.joinpath('src', 'webserver', 'static', 'global_temp_diff_map.png'))
         plt.close(fig)
@@ -121,11 +123,12 @@ class BatchProcessor:
         x_grid, y_grid = np.mgrid[0:900, 0:1800]
         points = np.array(points)*5  # Upscaling from 90/180° to 450/900
         values = np.array(values)
+        print(f"Current number of points used for interpolation: {points.shape}", flush=True)
         if points.size == 0:
             return np.zeros((900, 1800))
         points_tf = np.zeros(points.shape)
-        points_tf[:, 0] = points[:, 1] * -1 + 450
-        points_tf[:, 1] = points[:, 0] + 900
+        points_tf[:, 0] = points[:, 0] * -1 + 450
+        points_tf[:, 1] = points[:, 1] + 900
         model = griddata(points_tf, values, (x_grid, y_grid), method='nearest')
         model = gaussian_filter(model, [self.processing_sigma, self.processing_sigma]).astype(np.float64)
         model[~self.land_mask] = np.nan

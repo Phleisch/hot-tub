@@ -17,3 +17,4 @@ __pycache__
 /data/data
 /src/webserver/static/global_temp_diff_map.png
 /.vscode
+/data/saved_caches

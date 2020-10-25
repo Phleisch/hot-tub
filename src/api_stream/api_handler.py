@@ -70,8 +70,8 @@ class Api_Handler():
             try:
                 api_result = requests.get(Api_Handler.URL, params=request_params)
             except:  # noqa: E722
-                self.failerd_counter += 1
-                print(f'Request failed! Total request failures: {self.failed_counter}')
+                self.failed_counter += 1
+                print(f'Request failed! Total request failures: {self.failed_counter}', flush=True)
                 continue
             if api_result.status_code == Api_Handler.EXPECTED_API_STATUS_CODE:
                 return api_result.json()
